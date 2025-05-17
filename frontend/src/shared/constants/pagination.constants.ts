@@ -1,0 +1,1 @@
+export const SUPERHEROES_PER_PAGE = 5;
