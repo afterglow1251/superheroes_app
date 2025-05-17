@@ -1,7 +1,7 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { PaginatedSuperheroesResponse } from "../../shared/types/superheroes/superheroes.types";
 import { useEffect, useState } from "react";
-import { Pagination } from "antd";
+import { Alert, Pagination } from "antd";
 import { Spinner } from "../../shared/components/ui/Spinner";
 import { useNavigate, useSearchParams } from "react-router";
 import { SuperheroCard } from "../../components/superheroes/SuperheroCard";
@@ -40,19 +40,28 @@ export function SuperheroesListPage() {
       setPage(totalPages);
       setSearchParams({ page: totalPages.toString() });
     }
-  }, [data, page, setSearchParams]);
+  }, [data]);
 
   const navigate = useNavigate();
 
   if (isPending) return <Spinner />;
-  if (error) return <div>{error.message}</div>;
+  if (error) {
+    return (
+      <Alert
+        message="Error"
+        description={error.message}
+        type="error"
+        showIcon
+      />
+    );
+  }
   if (data.data.length === 0) return <NoData />;
 
   const totalElems = data.total;
 
-  const onPageChange = (page: number) => {
-    setPage(page);
-    setSearchParams({ page: page.toString() });
+  const onPageChange = (newPage: number) => {
+    setPage(newPage);
+    setSearchParams({ page: newPage.toString() });
   };
 
   const handleClickCard = (id: number) => {

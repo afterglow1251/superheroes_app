@@ -6,14 +6,21 @@ import { Header } from "./components/layout/Header";
 import { SuperheroDetailsPage } from "./pages/superheroes/SuperheroDetailsPage";
 import { ROUTES } from "./shared/constants/routes.constants";
 import { WithValidId } from "./shared/components/routing/WithValidId";
+import { NotificationRenderer } from "./shared/components/ui/app-level/NotificationRenderer";
+import { notification } from "antd";
 
 const queryClient = new QueryClient();
 
 function App() {
+  const [_, contextHolder] = notification.useNotification();
+
   return (
     <>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
+          {contextHolder}
+
+          <NotificationRenderer />
           <Header />
 
           <main className="p-8">
