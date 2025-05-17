@@ -4,13 +4,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Superhero } from "../../shared/types/superheroes/superheroes.types";
 import { Spinner } from "../../shared/components/ui/Spinner";
 import { NoData } from "../../shared/components/common/NoData";
-import { Image, Divider, Button, Popconfirm } from "antd";
+import { Image, Divider, Button, Popconfirm, Alert } from "antd";
 import { Tag } from "../../shared/components/ui/Tag";
 import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
-import { useAppNotification } from "../../shared/hooks/notifications.hook";
 import { ManageSuperheroModal } from "../../components/superheroes/ManageSuperheroModal/ManageSuperheroModal";
 import { NAVIGATE_ROUTES } from "../../shared/constants/routes.constants";
 import { superheroService } from "../../shared/services/superhero.service";
+import { useNotificationStore } from "../../shared/store/useNotificationStore";
 
 type SuperheroDetailsPageProps = {
   id: number;
@@ -19,13 +19,19 @@ type SuperheroDetailsPageProps = {
 export function SuperheroDetailsPage({ id }: SuperheroDetailsPageProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { contextHolder, openSuccess, openError } = useAppNotification();
 
   const location = useLocation();
-  const from = location.state?.from || NAVIGATE_ROUTES.home();
+  const fromUrl: string = location.state?.from || NAVIGATE_ROUTES.home();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const { addNotification } = useNotificationStore();
+
   const toggleModal = () => setIsModalOpen((prev) => !prev);
+
+  const handleEdit = () => {
+    toggleModal();
+  };
 
   const { data, isPending, error } = useQuery<Superhero>({
     queryKey: ["superhero", id],
@@ -33,20 +39,24 @@ export function SuperheroDetailsPage({ id }: SuperheroDetailsPageProps) {
     enabled: !!id,
   });
 
-  const handleEdit = () => {
-    toggleModal();
-  };
-
   const handleDelete = async () => {
     try {
       await superheroService.deleteSuperhero(id);
       queryClient.invalidateQueries({ queryKey: ["superheroes"] });
-      navigate(from);
+      addNotification({
+        type: "success",
+        message: "Superhero deleted",
+        description: "The superhero was deleted successfully.",
+      });
+      navigate(fromUrl);
     } catch (error) {
-      openError(
-        "Error",
-        `Failed to delete superhero. ${(error as Error).message}. Try later...`
-      );
+      addNotification({
+        type: "error",
+        message: "Error",
+        description: `Failed to delete superhero. ${
+          (error as Error).message
+        }. Try later...`,
+      });
     }
   };
 
@@ -54,30 +64,44 @@ export function SuperheroDetailsPage({ id }: SuperheroDetailsPageProps) {
     try {
       await superheroService.updateSuperhero(id, updatedData);
 
-      openSuccess(
-        "Superhero updated",
-        "Superhero data was updated successfully."
-      );
+      addNotification({
+        type: "success",
+        message: "Superhero updated",
+        description: "Superhero data was updated successfully.",
+      });
+
       queryClient.invalidateQueries({ queryKey: ["superhero", id] });
       queryClient.invalidateQueries({ queryKey: ["superheroes"] });
+
       toggleModal();
-    } catch (error) {
-      openError(
-        "Update failed",
-        `Failed to update superhero. ${(error as Error).message}. Try later...`
-      );
-      throw error;
+      return true;
+    } catch (e) {
+      addNotification({
+        type: "error",
+        message: "Update failed",
+        description: `Failed to update superhero. ${
+          (e as Error).message
+        }. Try later...`,
+      });
+      return false;
     }
   };
 
   if (isPending) return <Spinner />;
-  if (error) return <div>{error.message}</div>;
+  if (error) {
+    return (
+      <Alert
+        message="Error"
+        description={error.message}
+        type="error"
+        showIcon
+      />
+    );
+  }
   if (!data) return <NoData />;
 
   return (
     <div className="max-w-4xl mx-auto mt-8 px-4 text-neutral-800">
-      {contextHolder}
-
       <ManageSuperheroModal
         open={isModalOpen}
         toggleModal={toggleModal}

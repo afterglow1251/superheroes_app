@@ -11,7 +11,7 @@ const { TextArea } = Input;
 type ManageSuperheroModalProps = {
   open: boolean;
   toggleModal: () => void;
-  onOk: (data: Omit<Superhero, "id">) => void | Promise<void>;
+  onOk: (data: Omit<Superhero, "id">) => boolean | Promise<boolean>;
   initialValues?: Superhero;
   mode?: "create" | "edit";
 };
@@ -125,10 +125,10 @@ export function ManageSuperheroModal({
       superpowers,
       images: imageUrls,
     };
-    try {
-      await onOk(superheroData);
+    const success = await onOk(superheroData);
+    if (success) {
       resetForm();
-    } catch {}
+    }
   };
 
   const handleCancel = () => {
