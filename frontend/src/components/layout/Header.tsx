@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Layout, Button, Space, Flex } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router";
 import type { Superhero } from "../../shared/types/superheroes/superheroes.types";
 import { NAVIGATE_ROUTES } from "../../shared/constants/routes.constants";
@@ -18,31 +18,29 @@ export function Header() {
 
   const toggleModal = () => setIsCreateModalOpen((prev) => !prev);
 
-  const handleCreateSuperhero = async (
-    data: Omit<Superhero, "id">
-  ): Promise<boolean> => {
-    try {
-      await superheroService.createSuperhero(data);
+  const createSuperheroMutation = useMutation({
+    mutationFn: (data: Omit<Superhero, "id">) =>
+      superheroService.createSuperhero(data),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["superheroes"] });
-
       addNotification({
         type: "success",
         message: "Superhero created",
         description: "The new superhero was added successfully.",
       });
-
       toggleModal();
-
-      return true;
-    } catch (e) {
+    },
+    onError: (error: Error) => {
       addNotification({
         type: "error",
         message: "Error",
-        description: `Failed to add superhero. ${(e as Error).message}`,
+        description: `Failed to add superhero. ${error.message}`,
       });
+    },
+  });
 
-      return false;
-    }
+  const handleCreateSuperhero = async (data: Omit<Superhero, "id">) => {
+    await createSuperheroMutation.mutateAsync(data);
   };
 
   return (
@@ -61,6 +59,7 @@ export function Header() {
               icon={<PlusOutlined />}
               onClick={toggleModal}
               className="flex items-center"
+              loading={createSuperheroMutation.isPending}
             >
               <span className="hidden min-[400px]:inline">Add Superhero</span>
             </Button>
@@ -71,6 +70,7 @@ export function Header() {
           open={isCreateModalOpen}
           toggleModal={toggleModal}
           onOk={handleCreateSuperhero}
+          isLoading={createSuperheroMutation.isPending}
         />
       </AntHeader>
     </>

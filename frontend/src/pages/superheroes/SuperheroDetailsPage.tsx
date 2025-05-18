@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Superhero } from "../../shared/types/superheroes/superheroes.types";
 import { Spinner } from "../../shared/components/ui/Spinner";
 import { NoData } from "../../shared/components/common/NoData";
@@ -39,9 +39,9 @@ export function SuperheroDetailsPage({ id }: SuperheroDetailsPageProps) {
     enabled: !!id,
   });
 
-  const handleDelete = async () => {
-    try {
-      await superheroService.deleteSuperhero(id);
+  const deleteMutation = useMutation({
+    mutationFn: () => superheroService.deleteSuperhero(id),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["superheroes"] });
       addNotification({
         type: "success",
@@ -49,42 +49,44 @@ export function SuperheroDetailsPage({ id }: SuperheroDetailsPageProps) {
         description: "The superhero was deleted successfully.",
       });
       navigate(fromUrl);
-    } catch (error) {
+    },
+    onError: (error: Error) => {
       addNotification({
         type: "error",
         message: "Error",
-        description: `Failed to delete superhero. ${
-          (error as Error).message
-        }. Try later...`,
+        description: `Failed to delete superhero. ${error.message}. Try later...`,
       });
-    }
-  };
+    },
+  });
 
-  const handleUpdate = async (updatedData: Omit<Superhero, "id">) => {
-    try {
-      await superheroService.updateSuperhero(id, updatedData);
-
+  const updateMutation = useMutation({
+    mutationFn: (updatedData: Omit<Superhero, "id">) =>
+      superheroService.updateSuperhero(id, updatedData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["superhero", id] });
+      queryClient.invalidateQueries({ queryKey: ["superheroes"] });
       addNotification({
         type: "success",
         message: "Superhero updated",
         description: "Superhero data was updated successfully.",
       });
-
-      queryClient.invalidateQueries({ queryKey: ["superhero", id] });
-      queryClient.invalidateQueries({ queryKey: ["superheroes"] });
-
       toggleModal();
-      return true;
-    } catch (e) {
+    },
+    onError: (error: Error) => {
       addNotification({
         type: "error",
         message: "Update failed",
-        description: `Failed to update superhero. ${
-          (e as Error).message
-        }. Try later...`,
+        description: `Failed to update superhero. ${error.message}. Try later...`,
       });
-      return false;
-    }
+    },
+  });
+
+  const handleDelete = () => {
+    deleteMutation.mutate();
+  };
+
+  const handleUpdate = async (updatedData: Omit<Superhero, "id">) => {
+    await updateMutation.mutateAsync(updatedData);
   };
 
   if (isPending) return <Spinner />;
@@ -108,6 +110,7 @@ export function SuperheroDetailsPage({ id }: SuperheroDetailsPageProps) {
         onOk={handleUpdate}
         initialValues={data}
         mode="edit"
+        isLoading={updateMutation.isPending}
       />
 
       <div className="flex flex-col md:flex-row gap-10">
