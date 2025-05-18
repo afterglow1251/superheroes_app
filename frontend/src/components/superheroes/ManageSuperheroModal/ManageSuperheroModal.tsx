@@ -11,9 +11,10 @@ const { TextArea } = Input;
 type ManageSuperheroModalProps = {
   open: boolean;
   toggleModal: () => void;
-  onOk: (data: Omit<Superhero, "id">) => boolean | Promise<boolean>;
+  onOk: (data: Omit<Superhero, "id">) => Promise<void>;
   initialValues?: Superhero;
   mode?: "create" | "edit";
+  isLoading?: boolean;
 };
 
 export function ManageSuperheroModal({
@@ -22,12 +23,11 @@ export function ManageSuperheroModal({
   onOk,
   initialValues,
   mode = "create",
+  isLoading = false,
 }: ManageSuperheroModalProps) {
   const [form] = Form.useForm();
-
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [newImageUrl, setNewImageUrl] = useState("");
-
   const [superpowers, setSuperpowers] = useState<string[]>([]);
   const [newSuperpower, setNewSuperpower] = useState("");
 
@@ -125,10 +125,8 @@ export function ManageSuperheroModal({
       superpowers,
       images: imageUrls,
     };
-    const success = await onOk(superheroData);
-    if (success) {
-      resetForm();
-    }
+    await onOk(superheroData);
+    resetForm();
   };
 
   const handleCancel = () => {
@@ -145,14 +143,17 @@ export function ManageSuperheroModal({
       onCancel={handleCancel}
       okText="Save"
       width={800}
+      confirmLoading={isLoading}
+      okButtonProps={{ disabled: isLoading }}
+      cancelButtonProps={{ disabled: isLoading }}
     >
       <Form form={form} layout="vertical" autoComplete="off">
         <Form.Item name="nickname" label="Nickname" rules={rules.nickname}>
-          <Input placeholder="Enter nickname" />
+          <Input placeholder="Enter nickname" disabled={isLoading} />
         </Form.Item>
 
         <Form.Item name="real_name" label="Real Name" rules={rules.real_name}>
-          <Input placeholder="Enter real name" />
+          <Input placeholder="Enter real name" disabled={isLoading} />
         </Form.Item>
 
         <Form.Item
@@ -160,7 +161,11 @@ export function ManageSuperheroModal({
           label="Origin Description"
           rules={rules.origin_description}
         >
-          <TextArea rows={2} placeholder="Enter origin description" />
+          <TextArea
+            rows={2}
+            placeholder="Enter origin description"
+            disabled={isLoading}
+          />
         </Form.Item>
 
         <Form.Item
@@ -173,11 +178,13 @@ export function ManageSuperheroModal({
               value={newSuperpower}
               onChange={(e) => setNewSuperpower(e.target.value)}
               placeholder="Enter a superpower"
+              disabled={isLoading}
             />
             <Button
               type="primary"
               onClick={addSuperpower}
               icon={<PlusOutlined />}
+              disabled={isLoading}
             >
               Add
             </Button>
@@ -198,6 +205,7 @@ export function ManageSuperheroModal({
                       danger
                       icon={<DeleteOutlined />}
                       onClick={() => removeSuperpower(power)}
+                      disabled={isLoading}
                     />,
                   ]}
                   key={power}
@@ -216,7 +224,7 @@ export function ManageSuperheroModal({
           label="Catch Phrase"
           rules={rules.catch_phrase}
         >
-          <Input placeholder="Enter catch phrase" />
+          <Input placeholder="Enter catch phrase" disabled={isLoading} />
         </Form.Item>
 
         <Form.Item
@@ -229,11 +237,13 @@ export function ManageSuperheroModal({
               value={newImageUrl}
               onChange={(e) => setNewImageUrl(e.target.value)}
               placeholder="Enter image URL"
+              disabled={isLoading}
             />
             <Button
               type="primary"
               onClick={addImageUrl}
               icon={<PlusOutlined />}
+              disabled={isLoading}
             >
               Add
             </Button>
@@ -254,6 +264,7 @@ export function ManageSuperheroModal({
                       danger
                       icon={<DeleteOutlined />}
                       onClick={() => removeImageUrl(url)}
+                      disabled={isLoading}
                     />,
                   ]}
                   key={url}
