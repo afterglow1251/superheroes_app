@@ -44,9 +44,9 @@ Full-stack application for working with a database of superheroes.
    cd frontend
    npm install
    ```
-2. Create a.env file in the frontend root and fill it in (example):
+2. Create a .env file in the frontend root and fill it in (example):
    ```env
-   FRONTEND_URL  = 
+   VITE_FRONTEND_URL  = 
    ```
    ⚠️ Fill in the values according to your environment setup.
 
