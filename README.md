@@ -45,11 +45,10 @@ Full-stack application for working with a database of superheroes.
    npm install
    ```
 2. Create a.env file in the frontend root and fill it in (example):
-   VITE_BACKEND_URL=
-   ```bash
-   npm run seed
+   ```env
+   FRONTEND_URL  = 
    ```
-   ⚠️ Set the value to your backend URL (e.g., http://localhost:3000).
+   ⚠️ Fill in the values according to your environment setup.
 
 3. Run the frontend:
    ```bash
